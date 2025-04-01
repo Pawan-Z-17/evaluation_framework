@@ -254,7 +254,7 @@ def binary_string_output(string1):
 input=sys.argv[1]
 output=sys.argv[2]
 pointer1=open(input,"r")
-pointer2=open(output,"w")
+pointer2=open(output,"a")
 
 
 
