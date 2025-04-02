@@ -263,13 +263,21 @@ def write_memory_to_file(file):
         file.write(f"{integer_to_hex(i)}:{to_twos_complement(Memory_values[i])}\n")
 
 if __name__ == "__main__": #added if __name__
-    with open(r"C:\Users\divij\Downloads\inp.txt", 'r') as file:
+    
+     if len(sys.argv) < 3:
+         print("Usage: python script.py <input_file> <output_file>")
+         sys.exit(1)
+ 
+     input_file = sys.argv[1]
+     output_file = sys.argv[2]
+ 
+     with open(input_file, 'r') as file:
         list1 = [line.strip() for line in file]
 
     size = len(list1)
     index = 0
 
-    with open(r"C:\Users\divij\Downloads\inp.txt", 'w') as file: # changed the output file name
+    with open(output_file, 'w') as file: # changed the output file name
         while pc < size * 4 and list1[index] != "00000000000000000000000001100011":
             if list1[index] == "00000000000000000000000001100011":
                 break
