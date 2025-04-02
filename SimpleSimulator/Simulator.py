@@ -1,21 +1,37 @@
 import sys
+
 def to_twos_complement(num):
+    """Convert a signed integer to a 32-bit two's complement binary string."""
     # Convert the number to binary and keep the last 32 bits
-    binary = '0b'+format(num & 0xFFFFFFFF, '032b')
-    return binary
+    if -2**31 <= num < 2**31:
+        if num >= 0:
+            binary = '0b' + format(num, '032b')
+        else:
+            positive_value = 2**32 + num
+            binary = '0b' + format(positive_value, '032b')
+        return binary
+    else:
+        raise ValueError("Value out of 32-bit range")
+
 
 def unsigned_binary(binary_string):
-    # Extend binary_string to 32 bits
+    """Convert a binary string to an unsigned integer."""
+    # Extend binary_string to 32 bits.  This function had a bug
+    if not binary_string.startswith('0b'):
+        raise ValueError("Input must be a binary string starting with '0b'")
+    binary_string = binary_string[2:]
     extension_length = 32 - len(binary_string)
-    if binary_string[0] == '1':  # If the number is negative
-        binary_string = '1' * extension_length + binary_string
-    else:  # If the number is positive
-        binary_string = '0' * extension_length + binary_string
-    print(binary_string)
+    if extension_length < 0:
+        raise ValueError("Binary string too long")
+    binary_string = '0' * extension_length + binary_string
+
     return int(binary_string, 2)
+
+
 def unsigned_integer(n):
+    """Convert an integer to its unsigned 32-bit representation."""
     ans = to_twos_complement(n)
-    return unsigned_binary(ans[2:])
+    return unsigned_binary(ans)
 
 
 Register_names = {
@@ -27,56 +43,56 @@ Register_names = {
 }
 # Rest of the code remains the same
 R_list = ["0110011"]
-I_list = ["0000011","0010011","0010011", "1100111"]
+I_list = ["0000011", "0010011", "0010011", "1100111"]
 S_list = ["0100011"]
 B_list = ["1100011"]
-U_list = ["0110111","0010111"]
+U_list = ["0110111", "0010111"]
 J_list = ["1101111"]
-pc=0
+pc = 0
 Register_values = {
     "zero": 0, "ra": 0, "sp": 256, "gp": 0, "tp": 0, "t0": 0,
-    "t1": 0,"t2": 0, "s0": 0, "s1": 0,"a0": 0,"a1": 0,
-    "a2": 0,"a3": 0,"a4": 0,"a5": 0, "a6": 0,"a7": 0,
-    "s2": 0,"s3": 0,"s4": 0,"s5": 0,"s6": 0, "s7": 0,
-    "s8": 0,"s9": 0,"s10": 0, "s11": 0, "t3": 0,"t4": 0,
-    "t5": 0,"t6": 0
+    "t1": 0, "t2": 0, "s0": 0, "s1": 0, "a0": 0, "a1": 0,
+    "a2": 0, "a3": 0, "a4": 0, "a5": 0, "a6": 0, "a7": 0,
+    "s2": 0, "s3": 0, "s4": 0, "s5": 0, "s6": 0, "s7": 0,
+    "s8": 0, "s9": 0, "s10": 0, "s11": 0, "t3": 0, "t4": 0,
+    "t5": 0, "t6": 0
 }
 def integer_to_hex(n):
     temp = hex(n)[2:].zfill(8)
-    return '0x'+temp
+    return '0x' + temp
 def convert(binary_string):
     if binary_string[0] == '1':  # If the number is negative
         return -1 * (int(''.join('1' if b == '0' else '0' for b in binary_string), 2) + 1)
     else:  # If the number is positive
         return int(binary_string, 2)
 def ignore_overflow(n):
-    if(n< 2**31):
+    if (n < 2**31):
         return n
     num = to_twos_complement(n)
     ans = num[-32:]
     return convert(ans)
 
-Memory_values={
-    65536: 0, 65540: 0, 65544: 0, 65548: 0, 65552: 0, 
-    65556: 0, 65560: 0, 65564: 0, 65568: 0, 65572: 0, 
-    65576: 0, 65580: 0, 65584: 0, 65588: 0, 65592: 0, 
-    65596: 0, 65600: 0, 65604: 0, 65608: 0, 65612: 0, 
-    65616: 0, 65620: 0, 65624: 0, 65628: 0, 65632: 0, 
-    65636: 0, 65640: 0, 65644: 0, 65648: 0, 65652: 0, 
+Memory_values = {
+    65536: 0, 65540: 0, 65544: 0, 65548: 0, 65552: 0,
+    65556: 0, 65560: 0, 65564: 0, 65568: 0, 65572: 0,
+    65576: 0, 65580: 0, 65584: 0, 65588: 0, 65592: 0,
+    65596: 0, 65600: 0, 65604: 0, 65608: 0, 65612: 0,
+    65616: 0, 65620: 0, 65624: 0, 65628: 0, 65632: 0,
+    65636: 0, 65640: 0, 65644: 0, 65648: 0, 65652: 0,
     65656: 0, 65660: 0
 }
 def binary_to_int(binary_string):
     return int(binary_string, 2)
 def get_register_name(register_code):
-    return(Register_names[register_code])
+    return (Register_names[register_code])
 def checkregvalidity(register_code):
     if register_code in Register_names:
-        return(True)
-    return(False)
-#x0,gp and tp to always be kept as zero.....(should be implemented in print dictionary function)
-R_instructions={"0000000":{"000":"add"},"0100000":{"000":"sub"},"0000000":{"001":"sll"},
-                "0000000":{"010":"slt"},"0000000":{"011":"sltu"},"0000000":{"100":"xor"},
-                "0000000":{"101":"srl"},"0000000":{"110":"or"},"0000000":{"111":"and"}}
+        return (True)
+    return (False)
+# x0,gp and tp to always be kept as zero.....(should be implemented in print dictionary function)
+R_instructions = {"0000000": {"000": "add"}, "0100000": {"000": "sub"}, "0000000": {"001": "sll"},
+                  "0000000": {"010": "slt"}, "0000000": {"011": "sltu"}, "0000000": {"100": "xor"},
+                  "0000000": {"101": "srl"}, "0000000": {"110": "or"}, "0000000": {"111": "and"}}
 def R_type(inputstr):
     global pc
     funct7 = inputstr[0:7]
@@ -100,7 +116,8 @@ def R_type(inputstr):
         elif funct3 == '010':  # slt
             Register_values[rd_name] = 1 if Register_values[rs1_name] < Register_values[rs2_name] else 0
         elif funct3 == '011':  # sltu
-            Register_values[rd_name] = 1 if unsigned_integer(Register_values[rs1_name]) < unsigned_integer(Register_values[rs2_name]) else 0
+            Register_values[rd_name] = 1 if unsigned_integer(Register_values[rs1_name]) < unsigned_integer(
+                Register_values[rs2_name]) else 0
         elif funct3 == '100':  # xor
             Register_values[rd_name] = Register_values[rs1_name] ^ Register_values[rs2_name]
         elif funct3 == '101':  # srl
@@ -109,7 +126,7 @@ def R_type(inputstr):
             Register_values[rd_name] = Register_values[rs1_name] | Register_values[rs2_name]
         elif funct3 == '111':  # and
             Register_values[rd_name] = Register_values[rs1_name] & Register_values[rs2_name]
-    pc += 4
+        pc += 4
 def I_type(inputstr):
     global pc
     immediate = inputstr[0:12]
@@ -120,45 +137,51 @@ def I_type(inputstr):
     rs1_name = get_register_name(rs1)
     rd_name = get_register_name(rd)
     rs_value = Register_values[rs1_name]
-    if(func3=="010"):
+    if (func3 == "010"):
         extended_imm = convert(immediate)
-        Register_values[rd_name] = Memory_values[rs_value+extended_imm]
-        pc=pc+4
-    elif(func3=="000" and opcode == "0010011"):
+        if rs_value + extended_imm in Memory_values: # Check if the address is in memory
+            Register_values[rd_name] = Memory_values[rs_value + extended_imm]
+        else:
+            print(f"Error: Memory address {rs_value + extended_imm} not found in memory.  Setting to 0.")
+            Register_values[rd_name] = 0 # set to 0.
+        pc = pc + 4
+    elif (func3 == "000" and opcode == "0010011"):
         extended_imm = convert(immediate)
-        Register_values[rd_name] = rs_value  + extended_imm
-        pc+=4
-    elif(func3=="011"):
+        Register_values[rd_name] = rs_value + extended_imm
+        pc += 4
+    elif (func3 == "011"):
         converted_imm = convert(immediate)
-        
-        if(unsigned_binary(immediate)>unsigned_integer(rs_value)):
+
+        if (unsigned_binary(to_twos_complement(rs_value)) > unsigned_binary(to_twos_complement(converted_imm))): #to_twos_complement added here
             Register_values[rd_name] = 1
-        pc+=4
-    elif(func3=="000" and opcode=="1100111" ):
+        else:
+            Register_values[rd_name] = 0
+        pc += 4
+    elif (func3 == "000" and opcode == "1100111"):
         if rd_name == "zero":
-            pc = rs_value+convert(immediate)
+            pc = rs_value + convert(immediate)
             pc = pc & ~1
             return
-        Register_values[rd_name]=pc+4
-        pc = rs_value+convert(immediate)
+        Register_values[rd_name] = pc + 4
+        pc = rs_value + convert(immediate)
         pc = pc & ~1
 def S_type(inputstr):
     global pc
     immediate = inputstr[0:7] + inputstr[20:25]
     rs2 = inputstr[7:12]
-    rs1  = inputstr[12:17]
+    rs1 = inputstr[12:17]
     func3 = inputstr[17:20]
     opcode = inputstr[25:32]
     converted_imm = convert(immediate)
     rs1_name = get_register_name(rs1)
     rs2_name = get_register_name(rs2)
     rs1_value = Register_values[rs1_name]
-    Memory_values[rs1_value+converted_imm] = Register_values[rs2_name]
-    pc+=4
-    
+    Memory_values[rs1_value + converted_imm] = Register_values[rs2_name]
+    pc += 4
+
 def B_type(inputstr):
     global pc
-    imm =inputstr[0] + inputstr[24] + inputstr[1:7] + inputstr[20:24]+'0'
+    imm = inputstr[0] + inputstr[24] + inputstr[1:7] + inputstr[20:24] + '0'
     rs2 = inputstr[7:12]
     rs1 = inputstr[12:17]
     func3 = inputstr[17:20]
@@ -181,18 +204,18 @@ def B_type(inputstr):
     elif func3 == '101' and rs1_value >= rs2_value:  # bge
         pc += converted_imm
 
-    elif func3 == '110' and unsigned_integer(rs1_value) < unsigned_integer(rs2_value):  # bltu
+    elif func3 == '110' and unsigned_integer(rs1_value) < unsigned_integer(rs2_value):  # bltu #unsigned_integer
         pc += converted_imm
 
-    elif func3 == '111' and unsigned_integer(rs1_value) >= unsigned_integer(rs2_value):  # bgeu
+    elif func3 == '111' and unsigned_integer(rs1_value) >= unsigned_integer(rs2_value):  # bgeu #unsigned_integer
         pc += converted_imm
 
     else:
         pc += 4
-        
-def U_type(inputstr): 
+
+def U_type(inputstr):
     global pc
-    imm = inputstr[0:20] +'000000000000'
+    imm = inputstr[0:20] + '000000000000'
     rd = inputstr[20:25]
     opcode = inputstr[25:32]
     converted_imm = convert(imm)
@@ -205,7 +228,7 @@ def U_type(inputstr):
 
 def J_type(inputstr):
     global pc
-    imm = s[0] + s[12:20] + s[11]+ s[1:11]+ '0'
+    imm = inputstr[0] + inputstr[12:20] + inputstr[11] + inputstr[1:11] + '0'
     rd = inputstr[20:25]
     opcode = inputstr[25:32]
     converted_imm = convert(imm)
@@ -216,18 +239,18 @@ def J_type(inputstr):
         pc = pc & ~1  # make the LSB=0
 
 def solve(str):
-    opcode =  str[-7:]
-    if(opcode in R_list):
+    opcode = str[-7:]
+    if (opcode in R_list):
         R_type(str)
-    elif(opcode in I_list):
+    elif (opcode in I_list):
         I_type(str)
-    elif(opcode in S_list):
+    elif (opcode in S_list):
         S_type(str)
-    elif(opcode in B_list):
+    elif (opcode in B_list):
         B_type(str)
-    elif(opcode in U_list):
+    elif (opcode in U_list):
         U_type(str)
-    elif(opcode in J_list):
+    elif (opcode in J_list):
         J_type(str)
 def write_registers_to_file(file):
     global pc
@@ -239,21 +262,14 @@ def write_memory_to_file(file):
     for i in Memory_values:
         file.write(f"{integer_to_hex(i)}:{to_twos_complement(Memory_values[i])}\n")
 
-if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Usage: python script.py <input_file> <output_file>")
-        sys.exit(1)
-
-    input_file = sys.argv[1]
-    output_file = sys.argv[2]
-
-    with open(input_file, 'r') as file:
+if __name__ == "__main__": #added if __name__
+    with open(r"C:\Users\divij\Downloads\inp.txt", 'r') as file:
         list1 = [line.strip() for line in file]
 
     size = len(list1)
     index = 0
 
-    with open(output_file, 'w') as file:
+    with open(r"C:\Users\divij\Downloads\inp.txt", 'w') as file: # changed the output file name
         while pc < size * 4 and list1[index] != "00000000000000000000000001100011":
             if list1[index] == "00000000000000000000000001100011":
                 break
@@ -270,4 +286,3 @@ if __name__ == "__main__":
                 break
         write_registers_to_file(file)
         write_memory_to_file(file)
-
